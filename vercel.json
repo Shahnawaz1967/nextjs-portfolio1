@@ -1,0 +1,8 @@
+{
+    "functions": {
+      "api/contact/route.ts": {
+        "maxDuration": 20
+      }
+    }
+  }
+  

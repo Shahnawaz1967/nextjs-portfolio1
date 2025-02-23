@@ -1,34 +1,34 @@
-import { MongoClient } from "mongodb"
-
-const uri = process.env.MONGODB_URI
+import { NextResponse } from "next/server";
+import clientPromise from "@/lib/mongodb";
 
 export async function POST(request: Request) {
   try {
-    if (!uri) {
-      throw new Error("MongoDB URI is not defined")
-    }
-
-    const client = new MongoClient(uri)
-    await client.connect()
-
-    const db = client.db() // Automatically selects the 'portfolio' database
-    const collection = db.collection("messages")
-
-    // Parse the incoming request body
-    const { email, subject, message } = await request.json()
+    const { email, subject, message } = await request.json();
 
     if (!email || !subject || !message) {
-      return new Response("All fields are required", { status: 400 })
+      return NextResponse.json(
+        { error: "All fields are required" },
+        { status: 400 }
+      );
     }
 
-    // Insert the actual user message into the collection
-    await collection.insertOne({ email, subject, message, createdAt: new Date() })
+    const client = await clientPromise;
+    const db = client.db("portfolio");
+    const collection = db.collection("messages");
 
-    await client.close()
+    await collection.insertOne({
+      email,
+      subject,
+      message,
+      createdAt: new Date(),
+    });
 
-    return new Response("Message sent successfully!", { status: 200 })
-  } catch (error) {
-    console.error("Error:", error)
-    return new Response("Failed to send message.", { status: 500 })
+    return NextResponse.json({ message: "Message sent successfully!" });
+  } catch (error: any) {
+    console.error("Error in API:", error.message);
+    return NextResponse.json(
+      { error: "Failed to send message." },
+      { status: 500 }
+    );
   }
 }
